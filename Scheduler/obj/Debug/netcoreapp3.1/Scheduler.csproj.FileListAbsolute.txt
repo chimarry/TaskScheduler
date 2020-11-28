@@ -1,0 +1,9 @@
+C:\Users\Marija\Desktop\Odabrana poglavlja iz operativnih sistema\Projekat 1\Scheduler\Scheduler\bin\Debug\netcoreapp3.1\Scheduler.deps.json
+C:\Users\Marija\Desktop\Odabrana poglavlja iz operativnih sistema\Projekat 1\Scheduler\Scheduler\bin\Debug\netcoreapp3.1\Scheduler.dll
+C:\Users\Marija\Desktop\Odabrana poglavlja iz operativnih sistema\Projekat 1\Scheduler\Scheduler\obj\Debug\netcoreapp3.1\Scheduler.csprojAssemblyReference.cache
+C:\Users\Marija\Desktop\Odabrana poglavlja iz operativnih sistema\Projekat 1\Scheduler\Scheduler\obj\Debug\netcoreapp3.1\Scheduler.AssemblyInfoInputs.cache
+C:\Users\Marija\Desktop\Odabrana poglavlja iz operativnih sistema\Projekat 1\Scheduler\Scheduler\obj\Debug\netcoreapp3.1\Scheduler.AssemblyInfo.cs
+C:\Users\Marija\Desktop\Odabrana poglavlja iz operativnih sistema\Projekat 1\Scheduler\Scheduler\bin\Debug\netcoreapp3.1\Scheduler.pdb
+C:\Users\Marija\Desktop\Odabrana poglavlja iz operativnih sistema\Projekat 1\Scheduler\Scheduler\obj\Debug\netcoreapp3.1\Scheduler.csproj.CoreCompileInputs.cache
+C:\Users\Marija\Desktop\Odabrana poglavlja iz operativnih sistema\Projekat 1\Scheduler\Scheduler\obj\Debug\netcoreapp3.1\Scheduler.dll
+C:\Users\Marija\Desktop\Odabrana poglavlja iz operativnih sistema\Projekat 1\Scheduler\Scheduler\obj\Debug\netcoreapp3.1\Scheduler.pdb
