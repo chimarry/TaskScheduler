@@ -5,8 +5,14 @@
     /// </summary>
     public class CooperationMechanism
     {
-        public bool IsAbandoned { get; set; }
+        public bool IsCancelled { get; set; }
 
-        public void Abandone() => IsAbandoned = true;
+        public int Paused { get; set; }
+
+        public void Cancel() => IsCancelled = true;
+
+        public bool IsPaused() => Paused != 0;
+
+        public void Resume() => Paused = 0;
     }
 }

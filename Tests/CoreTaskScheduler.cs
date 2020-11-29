@@ -19,7 +19,7 @@ namespace Tests
                 while (true)
                 {
                     Console.WriteLine("Action 1 is executing");
-                    if (cooperationMechanism1.IsAbandoned)
+                    if (cooperationMechanism1.IsCancelled)
                         break;
                 }
             };
@@ -29,7 +29,7 @@ namespace Tests
                 while (true)
                 {
                     Console.WriteLine("Action 2 is executing");
-                    if (cooperationMechanism2.IsAbandoned)
+                    if (cooperationMechanism2.IsCancelled)
                         break;
                 }
             };
@@ -40,7 +40,7 @@ namespace Tests
                 while (true)
                 {
                     Console.WriteLine("Action 3 is executing");
-                    if (cooperationMechanism3.IsAbandoned)
+                    if (cooperationMechanism3.IsCancelled)
                         break;
                 }
             };

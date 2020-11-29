@@ -17,7 +17,7 @@ namespace Scheduler
         /// <summary>
         /// Unique identifier for an action
         /// </summary>
-        public int ActionIdentifier { get; set; }
+        public int PrioritizedLimitedTaskIdentifier { get; set; }
 
         /// <summary>
         /// An action to be executed
@@ -39,7 +39,7 @@ namespace Scheduler
         {
             Priority = priority;
             DurationInMiliseconds = durationInMiliseconds;
-            ActionIdentifier = new Random().Next(miminumIdentifierValue, maximumIdentifierValue);
+            PrioritizedLimitedTaskIdentifier = new Random().Next(miminumIdentifierValue, maximumIdentifierValue);
             Action = action;
         }
     }

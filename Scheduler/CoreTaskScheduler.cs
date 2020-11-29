@@ -2,33 +2,23 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Scheduler
 {
-    public class CoreTaskScheduler : TaskScheduler
+    public abstract class CoreTaskScheduler : TaskScheduler
     {
-        // TODO: Change to private
-        public ConcurrentQueue<Task> pendingTasks = new ConcurrentQueue<Task>();
-        public ConcurrentDictionary<int, PrioritizedLimitedTask> taskInformation = new ConcurrentDictionary<int, PrioritizedLimitedTask>();
+        protected ConcurrentQueue<PrioritizedLimitedTask> pendingTasks = new ConcurrentQueue<PrioritizedLimitedTask>();
 
-        private readonly bool isPreemtive = false;
-        private readonly int maxLevelOfParallelism;
-
-        private int currentlyRunningTasks = 0;
-        private object mylocker = new object();
+        protected readonly int maxLevelOfParallelism;
 
         public override int MaximumConcurrencyLevel => maxLevelOfParallelism;
 
         /// <summary>
         /// By default, this scheduler works as non-preemtive task scheduler. 
         /// </summary>
-        /// <param name="isPreemtive">Send true if  a task scheduler is planned to be used as 
-        /// a preemtive task scheduler</param>
-        public CoreTaskScheduler(int maxLevelOfParallelism, bool isPreemtive = false)
+        public CoreTaskScheduler(int maxLevelOfParallelism)
         {
-            this.isPreemtive = isPreemtive;
             this.maxLevelOfParallelism = maxLevelOfParallelism;
         }
 
@@ -40,56 +30,12 @@ namespace Scheduler
         {
             tasksForScheduling = tasksForScheduling.OrderBy(x => x.Priority, new PriorityComparer()).ToList();
             foreach (PrioritizedLimitedTask taskWithInformation in tasksForScheduling)
-            {
-                Task taskForExecution = Task.Factory.StartNew(taskWithInformation.Action, CancellationToken.None, TaskCreationOptions.None, this);
-                taskInformation.TryAdd(taskForExecution.Id, taskWithInformation);
-                RunScheduling();
-            }
-            /*  foreach (PrioritizedLimitedTask taskWithInformation in tasksForScheduling)
-              {
-                  Task taskForExecution = Task.Factory.StartNew(taskWithInformation.Action, CancellationToken.None, TaskCreationOptions.None, this);
-                  taskInformation.TryAdd(taskForExecution.Id, taskWithInformation);
-                  RunScheduling();
-              }*/
+                taskWithInformation.Start(this);
         }
 
-        /// <summary>
-        /// Schedules task for execution. U sustini ovo radi schedulovanje.
-        /// </summary>
-        /// <param name="task"></param>
-        protected override void QueueTask(Task task)
-        {
-            pendingTasks.Enqueue(task);
-            if (task is PrioritizedLimitedTask)
-            {
-                taskInformation.TryAdd(task.Id, task as PrioritizedLimitedTask);
-                RunScheduling();
-            }
-            if (isPreemtive)
-            {
-                //TODO: Run scheduling mechanism
-            }
-        }
+        protected abstract override void QueueTask(Task task);
 
-        public void RunScheduling()
-        {
-            for (int i = 0; i < maxLevelOfParallelism && !pendingTasks.IsEmpty && currentlyRunningTasks < 2; ++i)
-            {
-                pendingTasks.TryDequeue(out Task taskForExecution);
-                PrioritizedLimitedTask taskWithInformation = taskInformation[taskForExecution.Id];
-                Task collaborationTask = Task.Factory.StartNew(() =>
-                {
-                    Console.WriteLine("Started callback for " + taskForExecution.Id);
-                    Task.Delay(taskWithInformation.DurationInMiliseconds).Wait();
-                    taskWithInformation.cooperationMechanism.Abandone();
-                    Console.WriteLine("TASK " + taskWithInformation.Id + " COMPLETED");
-                    Interlocked.Decrement(ref currentlyRunningTasks);
-                    RunScheduling();
-                }, CancellationToken.None, TaskCreationOptions.None, Default);
-                Interlocked.Increment(ref currentlyRunningTasks);
-                new Task(() => TryExecuteTask(taskForExecution)).Start();
-            }
-        }
+        public abstract void RunScheduling();
 
         protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued)
         {
@@ -101,12 +47,12 @@ namespace Scheduler
         {
             return pendingTasks;
         }
-        /* private void SortPendingActions()
-         {
-             var sorted = pendingTasks.AsParallel()
-                                  .WithDegreeOfParallelism(Environment.ProcessorCount)
-                                  .OrderBy(x => x.Priority, new PriorityComparer());
-             pendingTasks = new ConcurrentQueue<PrioritizedLimitedTask>(sorted);
-         }*/
+
+        protected void SortPendingActions()
+        {
+            pendingTasks = new ConcurrentQueue<PrioritizedLimitedTask>(pendingTasks.AsParallel()
+                                 .WithDegreeOfParallelism(Environment.ProcessorCount)
+                                 .OrderBy(x => x.Priority, new PriorityComparer()));
+        }
     }
 }

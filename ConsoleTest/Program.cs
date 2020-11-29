@@ -10,15 +10,15 @@ namespace ConsoleTest
     {
         static void Main(string[] args)
         {
-            Scheduler.CoreTaskScheduler coreTaskScheduler = new Scheduler.CoreTaskScheduler(2);
+            NonPreemtiveTaskScheduler coreTaskScheduler = new NonPreemtiveTaskScheduler(2);
             CooperationMechanism cooperationMechanism1 = new CooperationMechanism();
             void action1()
             {
                 while (true)
                 {
                     Console.WriteLine("Action 1 is executing");
-                    Thread.Sleep(150);
-                    if (cooperationMechanism1.IsAbandoned)
+                    Thread.Sleep(100);
+                    if (cooperationMechanism1.IsCancelled)
                         break;
                 }
             }
@@ -28,8 +28,8 @@ namespace ConsoleTest
                 while (true)
                 {
                     Console.WriteLine("Action 2 is executing");
-                    Thread.Sleep(150);
-                    if (cooperationMechanism2.IsAbandoned)
+                    Thread.Sleep(100);
+                    if (cooperationMechanism2.IsCancelled)
                         break;
                 }
             }
@@ -40,8 +40,8 @@ namespace ConsoleTest
                 while (true)
                 {
                     Console.WriteLine("Action 3 is executing");
-                    Thread.Sleep(150);
-                    if (cooperationMechanism3.IsAbandoned)
+                    Thread.Sleep(100);
+                    if (cooperationMechanism3.IsCancelled)
                         break;
                 }
             }
@@ -54,7 +54,7 @@ namespace ConsoleTest
                 {
                     Console.WriteLine("Action 4 is executing");
                     Thread.Sleep(150);
-                    if (cooperationMechanism4.IsAbandoned)
+                    if (cooperationMechanism4.IsCancelled)
                         break;
                 }
             }
@@ -83,7 +83,7 @@ namespace ConsoleTest
             Task task = new Task(() =>
             {
                 Task.Delay(3300).Wait();
-                Console.WriteLine(cooperationMechanism1.IsAbandoned + "" + cooperationMechanism2.IsAbandoned + cooperationMechanism3.IsAbandoned + "");
+                Console.WriteLine(cooperationMechanism1.IsCancelled + "" + cooperationMechanism2.IsCancelled + cooperationMechanism3.IsCancelled + "");
             });
             task.Start();
             Task.WaitAll(task);
