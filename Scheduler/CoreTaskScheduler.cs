@@ -7,14 +7,19 @@ using System.Threading.Tasks;
 
 namespace Scheduler
 {
-    public class CoreTaskScheduler : TaskScheduler, IRealTimeScheduler
+    public class CoreTaskScheduler : TaskScheduler
     {
-        public ConcurrentQueue<PrioritizedLimitedTask> pendingTasks = new ConcurrentQueue<PrioritizedLimitedTask>();
-        private List<(PrioritizedLimitedTask, Task)> scheduledTasks = new List<(PrioritizedLimitedTask, Task)>();
-        private object pendingTasksLocker = new object();
+        // TODO: Change to private
+        public ConcurrentQueue<Task> pendingTasks = new ConcurrentQueue<Task>();
+        public ConcurrentDictionary<int, PrioritizedLimitedTask> taskInformation = new ConcurrentDictionary<int, PrioritizedLimitedTask>();
+
         private readonly bool isPreemtive = false;
         private readonly int maxLevelOfParallelism;
 
+        private int currentlyRunningTasks = 0;
+        private object mylocker = new object();
+
+        public override int MaximumConcurrencyLevel => maxLevelOfParallelism;
 
         /// <summary>
         /// By default, this scheduler works as non-preemtive task scheduler. 
@@ -30,83 +35,59 @@ namespace Scheduler
         /// <summary>
         /// Queues multiple actions for scheduling.
         /// </summary>
-        /// <param name="actions">List of actions to schedule</param>
-        public void QueueForScheduling(IList<PrioritizedLimitedTask> actions)
+        /// <param name="tasksForScheduling">List of actions to schedule</param>
+        public void QueueForScheduling(IList<PrioritizedLimitedTask> tasksForScheduling)
         {
-            lock (pendingTasksLocker)
+            tasksForScheduling = tasksForScheduling.OrderBy(x => x.Priority, new PriorityComparer()).ToList();
+            foreach (PrioritizedLimitedTask taskWithInformation in tasksForScheduling)
             {
-                foreach (PrioritizedLimitedTask action in actions)
-                    pendingTasks.Enqueue(action);
-                SortPendingActions();
+                Task taskForExecution = Task.Factory.StartNew(taskWithInformation.Action, CancellationToken.None, TaskCreationOptions.None, this);
+                taskInformation.TryAdd(taskForExecution.Id, taskWithInformation);
+                RunScheduling();
             }
+            /*  foreach (PrioritizedLimitedTask taskWithInformation in tasksForScheduling)
+              {
+                  Task taskForExecution = Task.Factory.StartNew(taskWithInformation.Action, CancellationToken.None, TaskCreationOptions.None, this);
+                  taskInformation.TryAdd(taskForExecution.Id, taskWithInformation);
+                  RunScheduling();
+              }*/
         }
 
         /// <summary>
-        /// Enables adding action to a queue of pending actions for scheduling in a real-time.
-        /// Scheduling will be called immediately if task scheduler is used as preemtive task scheduler.
+        /// Schedules task for execution. U sustini ovo radi schedulovanje.
         /// </summary>
-        /// <param name="prioritizedLimitedTask">The action to be scheduled</param>
-        public void QueueForScheduling(PrioritizedLimitedTask prioritizedLimitedTask)
-        {
-            lock (pendingTasksLocker)
-            {
-                QueueTask(prioritizedLimitedTask);
-            }
-        }
-
-        public void ScheduleTasks()
-        {
-            /* moze da se izvrsava samo n taskova paralelno
-             * mislim da cu da uradim bez context switchinga
-             * poziva se kada dodje task sa vecim prioritetom ili kada neki task zavrsi sa poslom
-             kada dodje task sa vecim prioritetom, trebao bi da se taj task koji je prekinut privremeno pauzira, pa onda nastavi,
-             * nekako koristeci asinhrono programiranje -> tipa: pokrene se task, ima mogucnost da se otkaze nasilno ili obicno. 
-             * kada se otkaze, on se ne zaustavlja, vec ceka da dobije mogucnost da se opet pokrene, pa se onda opet pokrene
-             * paziti na dijeljene resurse -> nekako komunicirati sa korisnickom funkcijom povodom dijeljenih resursa
-             */
-            // 
-        }
-
-        public void Schedule()
-        {
-            lock (pendingTasksLocker)
-            {
-                for (int i = 0; i < maxLevelOfParallelism && !pendingTasks.IsEmpty; ++i)
-                {
-                    pendingTasks.TryDequeue(out PrioritizedLimitedTask executingTask);
-                    // TODO: check for shared resources -> ako ima sve resurse, nastavi izvrsavanje, ako nema, neka ceka ponovo
-                    Task callableTask = new Task(() =>
-                       {
-                           Task.Delay(executingTask.DurationInMiliseconds).Wait();
-                           executingTask.cooperationMechanism.Abandone();
-                           Schedule();
-                       });
-                    executingTask.Start();
-                    callableTask.Start();
-                    Console.WriteLine("Started " + i + " " + maxLevelOfParallelism);
-                    scheduledTasks.Add((executingTask, callableTask));
-                }
-            }
-        }
-
-        protected override IEnumerable<Task> GetScheduledTasks()
-        {
-            return scheduledTasks.Select(x => x.Item1);
-        }
-
+        /// <param name="task"></param>
         protected override void QueueTask(Task task)
         {
-            lock (pendingTasksLocker)
+            pendingTasks.Enqueue(task);
+            if (task is PrioritizedLimitedTask)
             {
-                if (!(task is PrioritizedLimitedTask))
-                    throw new InvalidTaskException();
+                taskInformation.TryAdd(task.Id, task as PrioritizedLimitedTask);
+                RunScheduling();
+            }
+            if (isPreemtive)
+            {
+                //TODO: Run scheduling mechanism
+            }
+        }
 
-                pendingTasks.Enqueue(task as PrioritizedLimitedTask);
-                SortPendingActions();
-                if (isPreemtive)
+        public void RunScheduling()
+        {
+            for (int i = 0; i < maxLevelOfParallelism && !pendingTasks.IsEmpty && currentlyRunningTasks < 2; ++i)
+            {
+                pendingTasks.TryDequeue(out Task taskForExecution);
+                PrioritizedLimitedTask taskWithInformation = taskInformation[taskForExecution.Id];
+                Task collaborationTask = Task.Factory.StartNew(() =>
                 {
-                    //TODO: Run scheduling mechanism
-                }
+                    Console.WriteLine("Started callback for " + taskForExecution.Id);
+                    Task.Delay(taskWithInformation.DurationInMiliseconds).Wait();
+                    taskWithInformation.cooperationMechanism.Abandone();
+                    Console.WriteLine("TASK " + taskWithInformation.Id + " COMPLETED");
+                    Interlocked.Decrement(ref currentlyRunningTasks);
+                    RunScheduling();
+                }, CancellationToken.None, TaskCreationOptions.None, Default);
+                Interlocked.Increment(ref currentlyRunningTasks);
+                new Task(() => TryExecuteTask(taskForExecution)).Start();
             }
         }
 
@@ -115,12 +96,17 @@ namespace Scheduler
             return false;
         }
 
-        private void SortPendingActions()
+
+        protected override IEnumerable<Task> GetScheduledTasks()
         {
-            var sorted = pendingTasks.AsParallel()
-                                 .WithDegreeOfParallelism(Environment.ProcessorCount)
-                                 .OrderBy(x => x.Priority, new PriorityComparer());
-            pendingTasks = new ConcurrentQueue<PrioritizedLimitedTask>(sorted);
+            return pendingTasks;
         }
+        /* private void SortPendingActions()
+         {
+             var sorted = pendingTasks.AsParallel()
+                                  .WithDegreeOfParallelism(Environment.ProcessorCount)
+                                  .OrderBy(x => x.Priority, new PriorityComparer());
+             pendingTasks = new ConcurrentQueue<PrioritizedLimitedTask>(sorted);
+         }*/
     }
 }

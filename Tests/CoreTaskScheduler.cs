@@ -60,7 +60,6 @@ namespace Tests
                      cooperationMechanism = cooperationMechanism3
                  }
             });
-            coreTaskScheduler.Schedule();
         }
     }
 }

@@ -17,7 +17,7 @@ namespace ConsoleTest
                 while (true)
                 {
                     Console.WriteLine("Action 1 is executing");
-                    Thread.Sleep(100);
+                    Thread.Sleep(150);
                     if (cooperationMechanism1.IsAbandoned)
                         break;
                 }
@@ -28,7 +28,7 @@ namespace ConsoleTest
                 while (true)
                 {
                     Console.WriteLine("Action 2 is executing");
-                    Thread.Sleep(100);
+                    Thread.Sleep(150);
                     if (cooperationMechanism2.IsAbandoned)
                         break;
                 }
@@ -40,8 +40,21 @@ namespace ConsoleTest
                 while (true)
                 {
                     Console.WriteLine("Action 3 is executing");
-                    Thread.Sleep(100);
+                    Thread.Sleep(150);
                     if (cooperationMechanism3.IsAbandoned)
+                        break;
+                }
+            }
+
+
+            CooperationMechanism cooperationMechanism4 = new CooperationMechanism();
+            void action4()
+            {
+                while (true)
+                {
+                    Console.WriteLine("Action 4 is executing");
+                    Thread.Sleep(150);
+                    if (cooperationMechanism4.IsAbandoned)
                         break;
                 }
             }
@@ -52,19 +65,21 @@ namespace ConsoleTest
                 {
                     cooperationMechanism = cooperationMechanism1
                 },
-                new PrioritizedLimitedTask(action2, Priority.High, 1000)
+                new PrioritizedLimitedTask(action2, Priority.High, 2200)
                 {
                     cooperationMechanism = cooperationMechanism2
                 },
-                 new PrioritizedLimitedTask(action3, Priority.Normal, 1300)
+                 new PrioritizedLimitedTask(action3, Priority.Normal, 2000)
                  {
                      cooperationMechanism = cooperationMechanism3
                  }
             });
-            /* Thread.Sleep(1000);
-             foreach (PrioritizedLimitedTask task in coreTaskScheduler.pendingTasks)
-                 Console.WriteLine(task.Priority + " " + task.ActionIdentifier);*/
-            coreTaskScheduler.Schedule();
+
+            PrioritizedLimitedTask prioritizedLimitedTask = new PrioritizedLimitedTask(action4, Priority.Highest, 500)
+            {
+                cooperationMechanism = cooperationMechanism4
+            };
+            prioritizedLimitedTask.Start(coreTaskScheduler);
             Task task = new Task(() =>
             {
                 Task.Delay(3300).Wait();

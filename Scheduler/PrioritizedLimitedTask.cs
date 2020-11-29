@@ -40,6 +40,7 @@ namespace Scheduler
             Priority = priority;
             DurationInMiliseconds = durationInMiliseconds;
             ActionIdentifier = new Random().Next(miminumIdentifierValue, maximumIdentifierValue);
+            Action = action;
         }
     }
 
