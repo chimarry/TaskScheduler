@@ -6,17 +6,28 @@ using System.Threading.Tasks;
 
 namespace Scheduler
 {
+    /// <summary>
+    /// Abstract class used for priority task scheduling.
+    /// </summary>
     public abstract class CoreTaskScheduler : TaskScheduler
     {
+        /// <summary>
+        /// Queue containg pending tasks.
+        /// </summary>
         protected ConcurrentQueue<PrioritizedLimitedTask> pendingTasks = new ConcurrentQueue<PrioritizedLimitedTask>();
 
+        /// <summary>
+        /// Number of user's task that can be run in parallel.
+        /// </summary>
         protected readonly int maxLevelOfParallelism;
+
+        /// <summary>
+        /// Basic locker.
+        /// </summary>
+        protected readonly object schedulingLocker = new object();
 
         public override int MaximumConcurrencyLevel => maxLevelOfParallelism;
 
-        /// <summary>
-        /// By default, this scheduler works as non-preemtive task scheduler. 
-        /// </summary>
         public CoreTaskScheduler(int maxLevelOfParallelism)
         {
             this.maxLevelOfParallelism = maxLevelOfParallelism;
@@ -48,9 +59,13 @@ namespace Scheduler
             return pendingTasks;
         }
 
-        protected void SortPendingActions()
+        /// <summary>
+        /// Sorts pending tasks descending by priority.
+        /// </summary>
+        protected void SortPendingTasks()
         {
-            pendingTasks = new ConcurrentQueue<PrioritizedLimitedTask>(pendingTasks.AsParallel()
+            pendingTasks = new ConcurrentQueue<PrioritizedLimitedTask>(
+                     pendingTasks.AsParallel()
                                  .WithDegreeOfParallelism(Environment.ProcessorCount)
                                  .OrderByDescending(x => x.Priority, new PriorityComparer()));
         }
