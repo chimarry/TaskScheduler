@@ -31,7 +31,7 @@ namespace Scheduler.SharedResourceManager
         /// <summary>
         /// Represents matrix that defines the number of resources of each type currently allocated to each process.
         /// </summary>
-        private Dictionary<int, Dictionary<int, int>> allocatedResources = new Dictionary<int, Dictionary<int, int>>();
+        private readonly Dictionary<int, Dictionary<int, int>> allocatedResources = new Dictionary<int, Dictionary<int, int>>();
 
         /// <summary>
         /// Represents matrix that indicates the remaining resource need of each process.
