@@ -28,7 +28,7 @@ namespace Scheduler
         /// <param name="tasksForScheduling">List of actions to schedule</param>
         public void QueueForScheduling(IList<PrioritizedLimitedTask> tasksForScheduling)
         {
-            tasksForScheduling = tasksForScheduling.OrderBy(x => x.Priority, new PriorityComparer()).ToList();
+            tasksForScheduling = tasksForScheduling.OrderByDescending(x => x.Priority, new PriorityComparer()).ToList();
             foreach (PrioritizedLimitedTask taskWithInformation in tasksForScheduling)
                 taskWithInformation.Start(this);
         }
@@ -52,7 +52,7 @@ namespace Scheduler
         {
             pendingTasks = new ConcurrentQueue<PrioritizedLimitedTask>(pendingTasks.AsParallel()
                                  .WithDegreeOfParallelism(Environment.ProcessorCount)
-                                 .OrderBy(x => x.Priority, new PriorityComparer()));
+                                 .OrderByDescending(x => x.Priority, new PriorityComparer()));
         }
     }
 }

@@ -11,8 +11,11 @@
 
         public void Cancel() => IsCancelled = true;
 
-        public bool IsPaused() => Paused != 0;
+        public bool IsPaused() => Paused > 0;
 
-        public void Resume() => Paused = 0;
+        public void Resume()
+        {
+            Paused = 0;
+        }
     }
 }

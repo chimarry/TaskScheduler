@@ -49,15 +49,15 @@ namespace Tests
             {
                 new PrioritizedLimitedTask(action1, Priority.Lowest, 2000)
                 {
-                    cooperationMechanism = cooperationMechanism1
+                    CooperationMechanism = cooperationMechanism1
                 },
                 new PrioritizedLimitedTask(action2, Priority.High, 1000)
                 {
-                    cooperationMechanism = cooperationMechanism2
+                    CooperationMechanism = cooperationMechanism2
                 },
                  new PrioritizedLimitedTask(action3, Priority.Normal, 1300)
                  {
-                     cooperationMechanism = cooperationMechanism3
+                     CooperationMechanism = cooperationMechanism3
                  }
             });
         }

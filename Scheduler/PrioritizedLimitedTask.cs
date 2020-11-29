@@ -1,5 +1,5 @@
-﻿using Scheduler.SharedResourceManager;
-using System;
+﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace Scheduler
@@ -7,12 +7,12 @@ namespace Scheduler
     /// <summary>
     /// Encapsulate an action passed to a task scheduler, with each action having its priority and max duration.
     /// </summary>
-    public class PrioritizedLimitedTask : Task
+    public class PrioritizedLimitedTask : Task, IComparable<PrioritizedLimitedTask>
     {
         private const int miminumIdentifierValue = 28;
         private const int maximumIdentifierValue = 1997;
 
-        public CooperationMechanism cooperationMechanism { get; set; }
+        public CooperationMechanism CooperationMechanism { get; set; }
 
         /// <summary>
         /// Unique identifier for an action
@@ -42,10 +42,15 @@ namespace Scheduler
             PrioritizedLimitedTaskIdentifier = new Random().Next(miminumIdentifierValue, maximumIdentifierValue);
             Action = action;
         }
+
+        public int CompareTo(PrioritizedLimitedTask other)
+        {
+            return Priority.CompareTo(other.Priority);
+        }
     }
 
     /// <summary>
     /// Represents possible priorities of an action.
     /// </summary>
-    public enum Priority { Highest, High, Normal, Low, Lowest }
+    public enum Priority { Lowest, Low, Normal, High, Highest }
 }

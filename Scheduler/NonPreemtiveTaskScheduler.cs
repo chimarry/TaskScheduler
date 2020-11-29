@@ -33,7 +33,7 @@ namespace Scheduler
                     Task collaborationTask = Task.Factory.StartNew(() =>
                     {
                         Task.Delay(taskWithInformation.DurationInMiliseconds).Wait();
-                        taskWithInformation.cooperationMechanism.Cancel();
+                        taskWithInformation.CooperationMechanism.Cancel();
                         Interlocked.Decrement(ref currentlyRunningTasks);
                         RunScheduling();
                     }, CancellationToken.None, TaskCreationOptions.None, Default);
