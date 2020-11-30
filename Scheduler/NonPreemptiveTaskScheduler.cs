@@ -4,16 +4,16 @@ using System.Threading.Tasks;
 namespace Scheduler
 {
     /// <summary>
-    /// Implements task scheduler <see cref="CoreTaskScheduler"/> as non-preemtive task scheduler.
+    /// Implements task scheduler <see cref="CoreTaskScheduler"/> as non-preemptive task scheduler.
     /// </summary>
-    public class NonPreemtiveTaskScheduler : CoreTaskScheduler
+    public class NonPreemptiveTaskScheduler : CoreTaskScheduler
     {
         /// <summary>
         /// Number of currently running tasks.
         /// </summary>
         private int currentlyRunningTasks = 0;
 
-        public NonPreemtiveTaskScheduler(int maxLevelOfParallelism) : base(maxLevelOfParallelism) { }
+        public NonPreemptiveTaskScheduler(int maxLevelOfParallelism) : base(maxLevelOfParallelism) { }
 
         /// <summary>
         /// Schedules task based on priority and without interrupting currently running tasks.
@@ -32,7 +32,7 @@ namespace Scheduler
         }
 
         /// <summary>
-        /// Using preemtive scheduling algorithm, runs task.
+        /// Using preemptive scheduling algorithm, runs task.
         /// </summary>
         public override void RunScheduling()
         {

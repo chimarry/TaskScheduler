@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -7,9 +8,9 @@ using System.Threading.Tasks;
 namespace Scheduler
 {
     /// <summary>
-    /// Implements task scheduler <see cref="CoreTaskScheduler"/> as preemtive task scheduler.
+    /// Implements task scheduler <see cref="CoreTaskScheduler"/> as preemptive task scheduler.
     /// </summary>
-    public class PreemtiveTaskScheduler : CoreTaskScheduler
+    public class PreemptiveTaskScheduler : CoreTaskScheduler
     {
         /// <summary>
         /// Collection that stores information about tasks that are currently running.
@@ -18,7 +19,9 @@ namespace Scheduler
 
         public override int MaximumConcurrencyLevel => int.MaxValue;
 
-        public PreemtiveTaskScheduler(int maxLevelOfParallelism) : base(maxLevelOfParallelism) { }
+        public PreemptiveTaskScheduler(int maxLevelOfParallelism) : base(maxLevelOfParallelism)
+        {
+        }
 
         /// <summary>
         /// Schedules task based on a priority. If the task has a greater prirority than one of the currently running tasks, 
@@ -47,7 +50,7 @@ namespace Scheduler
         }
 
         /// <summary>
-        /// Using preemtive algorithm, runs task.
+        /// Using preemptive algorithm, runs task.
         /// </summary>
         public override void RunScheduling()
         {
@@ -64,9 +67,13 @@ namespace Scheduler
                         Task collaborationTask = Task.Factory.StartNew(() =>
                         {
                             Task.Delay(taskWithInformation.DurationInMiliseconds).Wait();
-                            // If task was ever resumed or is currently pauses, wait additional time
-                            if (taskWithInformation.CooperationMechanism.IsPaused || taskWithInformation.CooperationMechanism.IsResumed)
-                                Task.Delay(taskWithInformation.CooperationMechanism.PausedFor).Wait();
+                            // If task was ever resumed or is currently paused, wait additional time
+                            do
+                            {
+                                if (taskWithInformation.CooperationMechanism.IsPaused || taskWithInformation.CooperationMechanism.IsResumed)
+                                    Task.Delay(taskWithInformation.CooperationMechanism.PausedFor).Wait();
+                            }
+                            while (taskWithInformation.CooperationMechanism.IsPaused);
                             taskWithInformation.CooperationMechanism.Cancel();
                             executingTasks.Remove(taskWithInformation.PrioritizedLimitedTaskIdentifier, out _);
                             RunScheduling();
