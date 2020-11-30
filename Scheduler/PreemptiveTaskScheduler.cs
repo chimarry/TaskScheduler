@@ -58,7 +58,7 @@ namespace Scheduler
                 while (!pendingTasks.IsEmpty && executingTasks.Count < maxLevelOfParallelism)
                 {
                     // Get task that is next for execution (task with highest priority)
-                    pendingTasks.TryDequeue(out PrioritizedLimitedTask taskWithInformation);
+                    PrioritizedLimitedTask taskWithInformation = GetNextTask();
                     executingTasks.TryAdd(taskWithInformation.PrioritizedLimitedTaskIdentifier, taskWithInformation);
 
                     // If pending task was paused, than callback exist and does not need to be created again
@@ -75,6 +75,9 @@ namespace Scheduler
                             }
                             while (taskWithInformation.CooperationMechanism.IsPaused);
                             taskWithInformation.CooperationMechanism.Cancel();
+                            // Free shared resources
+                            if (taskWithInformation.UsesSharedResources())
+                                sharedResourceManager.FreeResources(taskWithInformation.PrioritizedLimitedTaskIdentifier, taskWithInformation.SharedResources);
                             executingTasks.Remove(taskWithInformation.PrioritizedLimitedTaskIdentifier, out _);
                             RunScheduling();
                         }, CancellationToken.None, TaskCreationOptions.None, Default);

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Scheduler.SharedResourceManager;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,8 @@ namespace Scheduler
     /// </summary>
     public abstract class CoreTaskScheduler : TaskScheduler
     {
+        protected readonly ISharedResourceManager sharedResourceManager = new SharedResourceManager.SharedResourceManager();
+
         /// <summary>
         /// Queue containg pending tasks.
         /// </summary>
@@ -68,6 +71,23 @@ namespace Scheduler
                      pendingTasks.AsParallel()
                                  .WithDegreeOfParallelism(Environment.ProcessorCount)
                                  .OrderByDescending(x => x.Priority, new PriorityComparer()));
+        }
+
+        protected PrioritizedLimitedTask GetNextTask()
+        {
+            pendingTasks.TryDequeue(out PrioritizedLimitedTask taskWithInformation);
+            if (taskWithInformation.UsesSharedResources())
+            {
+                RequestApproval approved = sharedResourceManager.AllocateResources(taskWithInformation.PrioritizedLimitedTaskIdentifier
+                                                                                   , taskWithInformation.SharedResources);
+                if (approved == RequestApproval.Wait)
+                {
+                    PrioritizedLimitedTask nextTask = GetNextTask();
+                    pendingTasks.Enqueue(taskWithInformation);
+                    taskWithInformation = nextTask;
+                }
+            }
+            return taskWithInformation;
         }
     }
 }

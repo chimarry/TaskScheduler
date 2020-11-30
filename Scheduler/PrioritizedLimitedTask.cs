@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Scheduler.SharedResourceManager;
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Scheduler
@@ -34,6 +36,8 @@ namespace Scheduler
         /// </summary>
         public int DurationInMiliseconds { get; set; }
 
+        public Dictionary<int, int> SharedResources { get; set; } = new Dictionary<int, int>();
+
         public PrioritizedLimitedTask(Action action, Priority priority, int durationInMiliseconds) : base(action)
         {
             Priority = priority;
@@ -46,6 +50,8 @@ namespace Scheduler
         {
             return Priority.CompareTo(other.Priority);
         }
+
+        public bool UsesSharedResources() => SharedResources.Count != 0;
     }
 
     /// <summary>
