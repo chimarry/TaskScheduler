@@ -239,7 +239,7 @@ namespace Tests
             Task task = new Task(() =>
             {
                 Task.Delay(2000).Wait();
-                Assert.IsTrue(cooperationMechanism2.IsPaused, "Not paused");
+                Assert.IsTrue(cooperationMechanism2.IsPaused || cooperationMechanism1.IsPaused, "Not paused");
                 Assert.IsTrue(cooperationMechanism4.IsCancelled, "Not finished");
             });
             task.Start();
