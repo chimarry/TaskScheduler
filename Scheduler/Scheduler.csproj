@@ -4,6 +4,10 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile>C:\Users\Marija\Desktop\Odabrana poglavlja iz operativnih sistema\Projekat 1\Scheduler\Scheduler\Scheduler.xml</DocumentationFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="System.Runtime" Version="4.3.1" />
   </ItemGroup>

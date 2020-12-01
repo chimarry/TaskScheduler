@@ -6,3 +6,4 @@ C:\Users\Marija\Desktop\Odabrana poglavlja iz operativnih sistema\Projekat 1\Sch
 C:\Users\Marija\Desktop\Odabrana poglavlja iz operativnih sistema\Projekat 1\Scheduler\Scheduler\obj\Debug\netcoreapp3.1\Scheduler.csproj.CoreCompileInputs.cache
 C:\Users\Marija\Desktop\Odabrana poglavlja iz operativnih sistema\Projekat 1\Scheduler\Scheduler\obj\Debug\netcoreapp3.1\Scheduler.dll
 C:\Users\Marija\Desktop\Odabrana poglavlja iz operativnih sistema\Projekat 1\Scheduler\Scheduler\obj\Debug\netcoreapp3.1\Scheduler.pdb
+C:\Users\Marija\Desktop\Odabrana poglavlja iz operativnih sistema\Projekat 1\Scheduler\Scheduler\bin\Debug\netcoreapp3.1\Scheduler.xml
