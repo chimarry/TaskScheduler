@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Scheduler", "Scheduler\Sche
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{851103B2-09FA-4AEF-9EF0-98CA24D0935E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleTest", "ConsoleTest\ConsoleTest.csproj", "{45252879-2044-40AC-8167-AF6051FF19A4}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{851103B2-09FA-4AEF-9EF0-98CA24D0935E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{851103B2-09FA-4AEF-9EF0-98CA24D0935E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{851103B2-09FA-4AEF-9EF0-98CA24D0935E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{45252879-2044-40AC-8167-AF6051FF19A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{45252879-2044-40AC-8167-AF6051FF19A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{45252879-2044-40AC-8167-AF6051FF19A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{45252879-2044-40AC-8167-AF6051FF19A4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -136,7 +136,11 @@ namespace Scheduler
                     pendingTasks.Enqueue(taskToPause);
                     RunTask(taskForExecution);
                 }
-                else RunScheduling();
+                else
+                {
+                    SortPendingTasks();
+                    RunScheduling();
+                }
         }
 
         /// <summary>
@@ -147,7 +151,7 @@ namespace Scheduler
         {
             lock (schedulingLocker)
             {
-                RequestApproval approved = RequestApproval.Denied;
+                RequestApproval approved = RequestApproval.Approved;
                 if (task.UsesSharedResources())
                     approved = sharedResourceManager.AllocateResources(task.PrioritizedLimitedTaskIdentifier
                                                                                       , task.SharedResources);
