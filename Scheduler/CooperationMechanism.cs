@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Scheduler
+﻿namespace Scheduler
 {
     /// <summary>
     /// Mechanism for cooperative task cancelling and context switching.

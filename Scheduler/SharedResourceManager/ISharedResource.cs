@@ -1,7 +1,7 @@
 ﻿namespace Scheduler
 {
     /// <summary>
-    /// Implement this interface when you want to declare a system's shared resource.
+    /// Implement this interface if you want to declare a system's shared resource.
     /// </summary>
     public interface ISharedResource
     {

@@ -63,7 +63,7 @@ namespace Scheduler
         }
 
         /// <summary>
-        /// Sorts pending tasks descending by priority.
+        /// Sorts pending tasks descending by priority <see cref="Priority"/>
         /// </summary>
         protected void SortPendingTasks()
         {
@@ -73,6 +73,10 @@ namespace Scheduler
                                  .OrderByDescending(x => x.Priority, new PriorityComparer()));
         }
 
+        /// <summary>
+        /// Finds and returns a task that has all necessary resources and allocates those resources. 
+        /// It assumes that list is not empty, so a caller of this method needs to check that.
+        /// </summary>
         protected PrioritizedLimitedTask GetNextTaskWithDeadlockAvoidance()
         {
             pendingTasks.TryDequeue(out PrioritizedLimitedTask taskWithInformation);
