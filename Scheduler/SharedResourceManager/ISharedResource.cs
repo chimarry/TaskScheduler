@@ -1,4 +1,4 @@
-﻿namespace Scheduler.SharedResourceManager
+﻿namespace Scheduler
 {
     /// <summary>
     /// Implement this interface when you want to declare a system's shared resource.

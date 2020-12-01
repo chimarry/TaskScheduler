@@ -1,9 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-using Scheduler.SharedResourceManager;
+using Scheduler;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Tests
@@ -18,7 +16,7 @@ namespace Tests
         [DataRow(new int[] { 0, 1, 1, 3, 2, 2 }, new int[] { 0, 1, 2, 3, 4 }, new int[] { 7, 5, 3, 6, 2, 2, 9, 0, 2, 2, 2, 2, 4, 3, 3 }, new int[] { 0, 1, 0, 2, 0, 0, 3, 0, 2, 2, 1, 1, 0, 0, 2 }, new int[] { 0, 10, 12, 1 }, RequestApproval.Denied)]
         public void AllocateResource(int[] resources, int[] processes, int[] maximum, int[] allocated, int[] request, RequestApproval expectedApproval)
         {
-            ISharedResourceManager sharedResourceManager = new Scheduler.SharedResourceManager.SharedResourceManager();
+            IBankerAlgorithm sharedResourceManager = new Scheduler.BankerAlgorithm();
             int resourceCount = resources.Length / 2;
             int processCount = processes.Length;
 

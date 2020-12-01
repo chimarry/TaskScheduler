@@ -1,5 +1,4 @@
-﻿using Scheduler.SharedResourceManager;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 
 namespace Scheduler
@@ -41,20 +40,8 @@ namespace Scheduler
             {
                 while (!pendingTasks.IsEmpty && currentlyRunningTasks < maxLevelOfParallelism)
                 {
-                    PrioritizedLimitedTask taskWithInformation = GetNextTask();
-
-                    // Using default task scheduler, enable cooperative execution
-                    Task collaborationTask = Task.Factory.StartNew(() =>
-                    {
-                        Task.Delay(taskWithInformation.DurationInMiliseconds).Wait();
-                        taskWithInformation.CooperationMechanism.Cancel();
-                        // Free resources
-                        if (taskWithInformation.UsesSharedResources())
-                            sharedResourceManager.FreeResources(taskWithInformation.PrioritizedLimitedTaskIdentifier, taskWithInformation.SharedResources);
-                        Interlocked.Decrement(ref currentlyRunningTasks);
-                        RunScheduling();
-                    }, CancellationToken.None, TaskCreationOptions.None, Default);
-
+                    PrioritizedLimitedTask taskWithInformation = GetNextTaskWithDeadlockAvoidance();
+                    StartCallback(taskWithInformation, () => Interlocked.Decrement(ref currentlyRunningTasks));
                     Interlocked.Increment(ref currentlyRunningTasks);
 
                     // Do not block a main thread

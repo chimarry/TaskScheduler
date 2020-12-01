@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Scheduler.SharedResourceManager
+namespace Scheduler
 {
     /// <summary>
     /// Using a banker's algorithm, this class manages.
     /// </summary>
-    public class SharedResourceManager : ISharedResourceManager
+    public class BankerAlgorithm : IBankerAlgorithm
     {
         private static readonly object bankerAlgorithmLocker = new object();
 

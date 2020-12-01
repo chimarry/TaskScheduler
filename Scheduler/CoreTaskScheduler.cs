@@ -1,8 +1,8 @@
-﻿using Scheduler.SharedResourceManager;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Scheduler
@@ -12,7 +12,7 @@ namespace Scheduler
     /// </summary>
     public abstract class CoreTaskScheduler : TaskScheduler
     {
-        protected readonly ISharedResourceManager sharedResourceManager = new SharedResourceManager.SharedResourceManager();
+        protected readonly IBankerAlgorithm sharedResourceManager = new BankerAlgorithm();
 
         /// <summary>
         /// Queue containg pending tasks.
@@ -73,7 +73,7 @@ namespace Scheduler
                                  .OrderByDescending(x => x.Priority, new PriorityComparer()));
         }
 
-        protected PrioritizedLimitedTask GetNextTask()
+        protected PrioritizedLimitedTask GetNextTaskWithDeadlockAvoidance()
         {
             pendingTasks.TryDequeue(out PrioritizedLimitedTask taskWithInformation);
             if (taskWithInformation.UsesSharedResources())
@@ -82,12 +82,33 @@ namespace Scheduler
                                                                                    , taskWithInformation.SharedResources);
                 if (approved == RequestApproval.Wait)
                 {
-                    PrioritizedLimitedTask nextTask = GetNextTask();
+                    PrioritizedLimitedTask nextTask = GetNextTaskWithDeadlockAvoidance();
                     pendingTasks.Enqueue(taskWithInformation);
                     taskWithInformation = nextTask;
                 }
             }
             return taskWithInformation;
         }
+
+        /// <summary>
+        /// Starts (creates and schedules) task that is used to cooperatively cancels (and optionally pauses) user's task. 
+        /// Is user's task used resources, resources are released.
+        /// This task is scheduled using default .NET scheduler.
+        /// </summary>
+        /// <param name="task">Corresponding user's task</param>
+        /// <param name="controlNumberOfExecutionTasksAction">Responsible for decrementing number of currently running tasks</param>
+        /// <param name="enablePauseAction">Responsible for pausing this callback for specific amount of time (optional)</param>
+        protected void StartCallback(PrioritizedLimitedTask task, Action controlNumberOfExecutionTasksAction, Action enablePauseAction = null)
+            => Task.Factory.StartNew(() =>
+                {
+                    Task.Delay(task.DurationInMiliseconds).Wait();
+                    enablePauseAction?.Invoke();
+                    task.CooperationMechanism.Cancel();
+                    // Free shared resources
+                    if (task.UsesSharedResources())
+                        sharedResourceManager.FreeResources(task.PrioritizedLimitedTaskIdentifier, task.SharedResources);
+                    controlNumberOfExecutionTasksAction.Invoke();
+                    RunScheduling();
+                }, CancellationToken.None, TaskCreationOptions.None, Default);
     }
 }

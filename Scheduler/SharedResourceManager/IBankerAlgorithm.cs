@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 
-namespace Scheduler.SharedResourceManager
+namespace Scheduler
 {
-    public interface ISharedResourceManager
+    public interface IBankerAlgorithm
     {
         void RegisterResource(ISharedResource sharedResource, int instancesCount);
 

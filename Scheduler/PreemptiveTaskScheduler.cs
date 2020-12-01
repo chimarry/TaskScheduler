@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Scheduler
@@ -38,19 +36,35 @@ namespace Scheduler
             pendingTasks.Enqueue(task as PrioritizedLimitedTask);
             Priority priority = (task as PrioritizedLimitedTask).Priority;
             PriorityComparer priorityComparer = new PriorityComparer();
-            PrioritizedLimitedTask taskToPause = executingTasks.Values.Where(x => x.CooperationMechanism.CanBePaused).Min();
-            if (taskToPause != null && priority.CompareTo(taskToPause.Priority) > 0 && executingTasks.Count >= maxLevelOfParallelism)
+            PrioritizedLimitedTask taskToPause = executingTasks.Values
+                                                               .Where(x => x.CooperationMechanism.CanBePaused)
+                                                               .Min();
+            if (taskToPause != null && priority.CompareTo(taskToPause.Priority) > 0)
+                RequestContextSwitch(task as PrioritizedLimitedTask, taskToPause);
+            else
             {
-                executingTasks.Remove(taskToPause.PrioritizedLimitedTaskIdentifier, out _);
-                taskToPause.CooperationMechanism.Pause((task as PrioritizedLimitedTask).DurationInMiliseconds);
-                pendingTasks.Enqueue(taskToPause);
+                SortPendingTasks();
+                RunScheduling();
             }
-            SortPendingTasks();
-            RunScheduling();
         }
 
         /// <summary>
-        /// Using preemptive algorithm, runs task.
+        /// Delays execution of a callback for specific amount of time.
+        /// </summary>
+        /// <param name="taskWithInformation">Task that contains information about that time.</param>
+        private void PauseCallback(PrioritizedLimitedTask taskWithInformation)
+        {
+            do
+            {
+                if (taskWithInformation.CooperationMechanism.IsPaused || taskWithInformation.CooperationMechanism.IsResumed)
+                    Task.Delay(taskWithInformation.CooperationMechanism.PausedFor).Wait();
+            }
+            while (taskWithInformation.CooperationMechanism.IsPaused);
+        }
+
+        /// <summary>
+        /// Using preemptive algorithm, runs tasks (number of tasks dependins on parallelism level).
+        /// Deadlock avoidance is enabled.
         /// </summary>
         public override void RunScheduling()
         {
@@ -58,39 +72,87 @@ namespace Scheduler
                 while (!pendingTasks.IsEmpty && executingTasks.Count < maxLevelOfParallelism)
                 {
                     // Get task that is next for execution (task with highest priority)
-                    PrioritizedLimitedTask taskWithInformation = GetNextTask();
+                    PrioritizedLimitedTask taskWithInformation = GetNextTaskWithDeadlockAvoidance();
                     executingTasks.TryAdd(taskWithInformation.PrioritizedLimitedTaskIdentifier, taskWithInformation);
 
                     // If pending task was paused, than callback exist and does not need to be created again
                     if (!taskWithInformation.CooperationMechanism.IsPaused && !taskWithInformation.CooperationMechanism.IsResumed)
-                    {
-                        Task collaborationTask = Task.Factory.StartNew(() =>
-                        {
-                            Task.Delay(taskWithInformation.DurationInMiliseconds).Wait();
-                            // If task was ever resumed or is currently paused, wait additional time
-                            do
-                            {
-                                if (taskWithInformation.CooperationMechanism.IsPaused || taskWithInformation.CooperationMechanism.IsResumed)
-                                    Task.Delay(taskWithInformation.CooperationMechanism.PausedFor).Wait();
-                            }
-                            while (taskWithInformation.CooperationMechanism.IsPaused);
-                            taskWithInformation.CooperationMechanism.Cancel();
-                            // Free shared resources
-                            if (taskWithInformation.UsesSharedResources())
-                                sharedResourceManager.FreeResources(taskWithInformation.PrioritizedLimitedTaskIdentifier, taskWithInformation.SharedResources);
-                            executingTasks.Remove(taskWithInformation.PrioritizedLimitedTaskIdentifier, out _);
-                            RunScheduling();
-                        }, CancellationToken.None, TaskCreationOptions.None, Default);
-                    }
+                        StartCallback(taskWithInformation,
+                                  () => executingTasks.Remove(taskWithInformation.PrioritizedLimitedTaskIdentifier, out _),
+                                  () => PauseCallback(taskWithInformation));
+
                     // Do not block a main thread.
                     new Task(() =>
-                    {
-                        if (taskWithInformation.CooperationMechanism.IsPaused)
-                            taskWithInformation.CooperationMechanism.Resume();
-                        else
-                            TryExecuteTask(taskWithInformation);
-                    }).Start();
+                        {
+                            if (taskWithInformation.CooperationMechanism.IsPaused)
+                                taskWithInformation.CooperationMechanism.Resume();
+                            else
+                                TryExecuteTask(taskWithInformation);
+                        }).Start();
                 }
+        }
+
+        /// <summary>
+        /// Executes specified task and starts cooresponding callback necessary for cooperation.
+        /// </summary>
+        /// <param name="taskWithInformation">Task to be executed</param>
+        private void RunTask(PrioritizedLimitedTask taskWithInformation)
+        {
+            lock (schedulingLocker)
+            {
+                executingTasks.TryAdd(taskWithInformation.PrioritizedLimitedTaskIdentifier, taskWithInformation);
+
+                // If pending task was paused, than callback exist and does not need to be started again
+                if (!taskWithInformation.CooperationMechanism.IsPaused && !taskWithInformation.CooperationMechanism.IsResumed)
+                    StartCallback(taskWithInformation,
+                                    () => executingTasks.Remove(taskWithInformation.PrioritizedLimitedTaskIdentifier, out _),
+                                    () => PauseCallback(taskWithInformation));
+
+                // Do not block a main thread.
+                new Task(() =>
+                {
+                    if (taskWithInformation.CooperationMechanism.IsPaused)
+                        taskWithInformation.CooperationMechanism.Resume();
+                    else
+                        TryExecuteTask(taskWithInformation);
+                }).Start();
+            }
+        }
+
+        /// <summary>
+        /// This method simulates a context switch (pauses one task, and runs another) if there is a guarantee that deadlock won't happen. 
+        /// If a task does not get necessary resources, normal scheduling is called (no context switching and no interruption).
+        /// </summary>
+        /// <param name="taskForExecution">Task to be executed</param>
+        /// <param name="taskToPause">Task to pause</param>
+        private void RequestContextSwitch(PrioritizedLimitedTask taskForExecution, PrioritizedLimitedTask taskToPause)
+        {
+            lock (schedulingLocker)
+                // TODO: Move
+                if (executingTasks.Count >= maxLevelOfParallelism && CanAvoidDeadlock(taskForExecution))
+                {
+                    executingTasks.Remove(taskToPause.PrioritizedLimitedTaskIdentifier, out _);
+                    taskToPause.CooperationMechanism.Pause(taskToPause.DurationInMiliseconds);
+                    pendingTasks.Enqueue(taskToPause);
+                    RunTask(taskForExecution);
+                }
+                else RunScheduling();
+        }
+
+        /// <summary>
+        /// If a task uses no shared resources, deadlock will be avoided. Otherwise, 
+        /// call is delegated to a manager that uses Banker's algorithm and decides whether deadlock can be avoided <see cref="IBankerAlgorithm"/>. 
+        /// </summary>
+        private bool CanAvoidDeadlock(PrioritizedLimitedTask task)
+        {
+            lock (schedulingLocker)
+            {
+                RequestApproval approved = RequestApproval.Denied;
+                if (task.UsesSharedResources())
+                    approved = sharedResourceManager.AllocateResources(task.PrioritizedLimitedTaskIdentifier
+                                                                                      , task.SharedResources);
+                return approved == RequestApproval.Approved;
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace Scheduler.SharedResourceManager
+﻿namespace Scheduler
 {
     public enum RequestApproval
     {

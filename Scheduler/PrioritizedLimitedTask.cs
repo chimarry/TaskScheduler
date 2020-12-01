@@ -1,5 +1,4 @@
-﻿using Scheduler.SharedResourceManager;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
